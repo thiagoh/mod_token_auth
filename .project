@@ -43,11 +43,11 @@
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.build.arguments</key>
-					<value>-j8</value>
+					<value>-j4</value>
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.buildLocation</key>
-					<value>/home/thiago/dev/cpp/mod_token_auth/build</value>
+					<value>/Users/thiago/dev/cpp/mod_token_auth/build</value>
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.useDefaultBuildCmd</key>
@@ -83,7 +83,7 @@
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.build.location</key>
-					<value>/home/thiago/dev/cpp/mod_token_auth/build</value>
+					<value>/Users/thiago/dev/cpp/mod_token_auth/build</value>
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.autoBuildTarget</key>
@@ -102,16 +102,16 @@
 		</buildCommand>
 	</buildSpec>
 	<natures>
-		<nature>org.eclipse.cdt.core.ccnature</nature>
 		<nature>org.eclipse.cdt.make.core.makeNature</nature>
 		<nature>org.eclipse.cdt.make.core.ScannerConfigNature</nature>
+		<nature>org.eclipse.cdt.core.ccnature</nature>
 		<nature>org.eclipse.cdt.core.cnature</nature>
 	</natures>
 	<linkedResources>
 		<link>
 			<name>[Source directory]</name>
 			<type>2</type>
-			<location>/home/thiago/dev/cpp/mod_token_auth/project</location>
+			<location>/Users/thiago/dev/cpp/mod_token_auth/project</location>
 		</link>
 		<link>
 			<name>[Subprojects]</name>
@@ -121,7 +121,7 @@
 		<link>
 			<name>[Subprojects]/crypto_c</name>
 			<type>2</type>
-			<location>/home/thiago/dev/cpp/mod_token_auth/project</location>
+			<location>/Users/thiago/dev/cpp/mod_token_auth/project</location>
 		</link>
 		<link>
 			<name>[Targets]</name>
@@ -146,7 +146,7 @@
 		<link>
 			<name>[Targets]/[lib] mod_token_auth/Source Files/mod_token_auth.c</name>
 			<type>1</type>
-			<location>/home/thiago/dev/cpp/mod_token_auth/project/src/mod_token_auth.c</location>
+			<location>/Users/thiago/dev/cpp/mod_token_auth/project/src/mod_token_auth.c</location>
 		</link>
 		<link>
 			<name>[Targets]/[lib] mod_token_auth/Header Files</name>
