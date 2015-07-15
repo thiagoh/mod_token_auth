@@ -1,175 +1,113 @@
-/*
- * Crypto.cpp
- *
- *  Created on: Jul 2, 2015
- *      Author: thiagoh
- */
-
 #include <crypto.h>
-#include <string.h>
+#include <stdio.h>
+#include "apr.h"
+#include "apr_poll.h"
+#include "apr_hash.h"
+#include "apr_pools.h"
+#include "ap_config.h"
+#include "ap_provider.h"
+/* Include the required headers from httpd */
+#include "httpd.h"
+#include "http_core.h"
+#include "http_config.h"
+#include "http_log.h"
+#include "http_protocol.h"
+#include "http_request.h"
 
-void crypto_handle_errors() {
-	ERR_print_errors_fp(stderr);
-	abort();
-};
+/* Define prototypes of our functions in this module */
+static void register_hooks(apr_pool_t *pool);
+static int example_handler(request_rec *r);
 
-crypto_data crypto_encrypt(unsigned char* plaintext, int plaintextLength, unsigned char *key, unsigned char* iv) {
+/* Define our module as an entity and assign a function for registering hooks  */
 
-	crypto_data p;
+module AP_MODULE_DECLARE_DATA example_module = {
 
-	if (!plaintext) {
-		p.error = true;
-		p.message = "Plaintext must be defined";
-		return p;
-	}
+STANDARD20_MODULE_STUFF,
+NULL,            // Per-directory configuration handler
+		NULL,            // Merge handler for per-directory configurations
+		NULL,            // Per-server configuration handler
+		NULL,            // Merge handler for per-server configurations
+		NULL,            // Any directives we may have for httpd
+		register_hooks   // Our hook registering function
+		};
 
-	if (plaintextLength < 0) {
-		p.error = true;
-		p.message = "Plaintext length must be positive";
-		return p;
-	}
+/* register_hooks: Adds a hook to the httpd process */
+static void register_hooks(apr_pool_t *pool) {
 
-	unsigned char* ciphertext = malloc(sizeof(unsigned char) * (plaintextLength + 16));
-
-	/* Load the human readable error strings for libcrypto */
-	ERR_load_crypto_strings();
-
-	/* Load all digest and cipher algorithms */
-	OpenSSL_add_all_algorithms();
-
-	/* Load config file, and other important initialisation */
-	OPENSSL_config(NULL);
-
-	EVP_CIPHER_CTX *ctx;
-
-	int len;
-	int ciphertext_len;
-	/* Create and initialise the context */
-	if (!(ctx = EVP_CIPHER_CTX_new()))
-		crypto_handle_errors();
-
-	/* Initialise the encryption operation. IMPORTANT - ensure you use a key
-	 * and IV size appropriate for your cipher
-	 * In this example we are using 256 bit AES (i.e. a 256 bit key). The
-	 * IV size for *most* modes is the same as the block size. For AES this
-	 * is 128 bits */
-	if (1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
-		crypto_handle_errors();
-
-	/* Provide the message to be encrypted, and obtain the encrypted output.
-	 * EVP_EncryptUpdate can be called multiple times if necessary
-	 */
-	if (1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintextLength))
-		crypto_handle_errors();
-
-	ciphertext_len = len;
-
-	/* Finalise the encryption. Further ciphertext bytes may be written at
-	 * this stage.
-	 */
-	if (1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len))
-		crypto_handle_errors();
-
-	ciphertext_len += len;
-
-	/* Clean up */
-	EVP_CIPHER_CTX_free(ctx);
-
-	/* Clean up */
-
-	/* Removes all digests and ciphers */
-	EVP_cleanup();
-
-	/* if you omit the next, a small leak may be left when you make use of the BIO (low level API) for e.g. base64 transformations */
-	CRYPTO_cleanup_all_ex_data();
-
-	/* Remove error strings */
-	ERR_free_strings();
-
-	p.error = false;
-	p.data = ciphertext;
-	p.length = ciphertext_len;
-
-	return p;
+	/* Hook the request handler */
+	ap_hook_handler(example_handler, NULL, NULL, APR_HOOK_LAST);
 }
 
-crypto_data crypto_decrypt(unsigned char* ciphertext, int ciphertextLength, unsigned char *key, unsigned char* iv) {
+/* The handler function for our module.
+ * This is where all the fun happens!
+ */
 
-	crypto_data p;
+static char* getParam(apr_table_t* GET, char* key, char* default_) {
 
-	if (!ciphertext) {
-		p.error = true;
-		p.message = "Cipher text must be defined";
-		return p;
+	/* Get the key from the query string, if any. */
+	char *value = apr_table_get(GET, key);
+
+	/* If no key was returned, we will set a default value instead. */
+	if (!value)
+		value = default_;
+
+	return value;
+}
+
+static int example_handler(request_rec *r) {
+
+	/* First off, we need to check if this is a call for the "example" handler.
+	 * If it is, we accept it and do our things, it not, we simply return DECLINED,
+	 * and Apache will try somewhere else.
+	 */
+	if (!r->handler || strcmp(r->handler, "example-handler"))
+		return (DECLINED);
+
+	// The first thing we will do is write a simple "Hello, world!" back to the client.
+	ap_set_content_type(r, "text/html"); /* force a raw text output */
+	ap_rputs("Hello, world!<br/>", r);
+
+	apr_table_t*GET;
+	ap_args_to_table(r, &GET);
+
+	apr_array_header_t*POST;
+	ap_parse_form_data(r, NULL, &POST, -1, 8192);
+
+	/* Get the "digest" key from the query string, if any. */
+	const char *digestType = getParam(GET, "digest", "sha1");
+
+	/* Get the "digest" key from the query string, if any. */
+	// use const
+	unsigned char *plain = getParam(GET, "plain",
+			"The fox jumped over the lazy dog");
+
+	/* Get the "digest" key from the query string, if any. */
+	// use const
+	unsigned char *cipher = getParam(GET, "cipher", "");
+
+	// use const
+	unsigned char *iv = "papeo fj aepojfa epfaapeof japeofj apeof ja";
+
+	/* Get the "digest" key from the query string, if any. */
+	// use const
+	unsigned char *key = getParam(GET, "key", "The fox jumped over the lazy dog");
+
+	if (strlen(key) > 0) {
+
+		if (strlen(plain) > 0) {
+			crypto_data ciphereddata = crypto_encrypt(plain, strlen(plain), key, iv);
+
+			ap_rputs("Hello, world!<br/>", r);
+			ap_rprintf(r, "Ciphered data: %s", ciphereddata.data);
+		}
+
+	} else {
+
+		/* The following line just prints a message to the errorlog */
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server,
+				"mod_token_auth: key is empty. %s %s", plain, cipher);
+
 	}
 
-	if (ciphertextLength < 0) {
-		p.error = true;
-		p.message = "Cipher text length must be positive";
-		return p;
-	}
-
-	unsigned char* plaintext = malloc(sizeof(unsigned char) * (ciphertextLength));
-
-	/* Load the human readable error strings for libcrypto */
-	ERR_load_crypto_strings();
-
-	/* Load all digest and cipher algorithms */
-	OpenSSL_add_all_algorithms();
-
-	/* Load config file, and other important initialisation */
-	OPENSSL_config(NULL);
-
-	EVP_CIPHER_CTX *ctx;
-
-	int len;
-	int plaintext_len;
-
-	/* Create and initialise the context */
-	if (!(ctx = EVP_CIPHER_CTX_new()))
-		crypto_handle_errors();
-
-	/* Initialise the decryption operation. IMPORTANT - ensure you use a key
-	 * and IV size appropriate for your cipher
-	 * In this example we are using 256 bit AES (i.e. a 256 bit key). The
-	 * IV size for *most* modes is the same as the block size. For AES this
-	 * is 128 bits */
-	if (1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
-		crypto_handle_errors();
-
-	/* Provide the message to be decrypted, and obtain the plaintext output.
-	 * EVP_DecryptUpdate can be called multiple times if necessary
-	 */
-	if (1 != EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertextLength))
-		crypto_handle_errors();
-
-	plaintext_len = len;
-
-	/* Finalise the decryption. Further plaintext bytes may be written at
-	 * this stage.
-	 */
-	if (1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len))
-		crypto_handle_errors();
-
-	plaintext_len += len;
-
-	/* Clean up */
-	EVP_CIPHER_CTX_free(ctx);
-
-	/* Removes all digests and ciphers */
-	EVP_cleanup();
-
-	/* if you omit the next, a small leak may be left when you make use of the BIO (low level API) for e.g. base64 transformations */
-	CRYPTO_cleanup_all_ex_data();
-
-	/* Remove error strings */
-	ERR_free_strings();
-
-	plaintext[plaintext_len] = '\0';
-
-	p.error = false;
-	p.data = plaintext;
-	p.length = plaintext_len;
-
-	return p;
+	return OK;
 }

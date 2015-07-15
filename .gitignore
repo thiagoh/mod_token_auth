@@ -33,3 +33,4 @@
 .vagrant/ 
 Testing/ 
 build/
+project/src/.libs/

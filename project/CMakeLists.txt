@@ -11,6 +11,9 @@ set(APPLICATION_VERSION "${APPLICATION_VERSION_MAJOR}.${APPLICATION_VERSION_MINO
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Wall")
 
+include_directories("/usr/include/apache2")
+include_directories("/usr/include/apr-1.0")
+
 add_subdirectory(src)
 
 #add_subdirectory(test)
