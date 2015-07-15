@@ -1,0 +1,34 @@
+language:
+    - c
+
+compiler:
+    - gcc
+
+env:
+    - CMAKE_BUILD_TYPE="Release"
+    - CMAKE_BUILD_TYPE="Debug"
+
+script:
+    - wget https://cmocka.org/files/1.0/cmocka-1.0.1.tar.xz
+    - rm -rf cmocka-1.0.1
+    - tar xf cmocka-1.0.1.tar.xz
+    - rm -rf cmocka-build || true
+    - mkdir cmocka-build
+    - cd cmocka-build
+    - cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Debug ../cmocka-1.0.1
+    - make
+    - sudo make install
+    - cd ..
+    - rm -rf _build || true
+    - mkdir _build
+    - cd _build
+    - cmake -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} ..
+    - make 
+    - ctest --output-on-failure .
+
+notifications:
+  email:
+    recipients:
+      - thiagoh@gmail.com
+    on_success: change
+    on_failure: always
