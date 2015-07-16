@@ -54,6 +54,120 @@ static char* getParam(apr_table_t* GET, char* key, char* default_) {
 	return value;
 }
 
+static void _print(const unsigned char* s, int length) {
+
+	for (int i = 0; i < length; i++) {
+		printf("%x", 0xFF & s[i]);
+	}
+}
+
+static char* _sprint(const unsigned char* s, int length) {
+
+	char* sout = malloc(sizeof(char*) * (length + 1));
+	int i;
+	for (i = 0; i < length; i++) {
+		sprintf(sout + i, "%02x", s[i]);
+	}
+	sout[i + 1] = '\0';
+	return sout;
+}
+
+static unsigned char* ap_hex_to_char(request_rec *r, const unsigned char* s, int length) {
+
+	// Navigating through pointers: mode 1
+	// this mode uses an integer to increment the position
+//	unsigned char* sout = (unsigned char*) malloc(sizeof(unsigned char*) * (length + 1));
+//	int i = 0;
+//	int id = 0;
+//	while(i < length) {
+//
+//		int out = sscanf(s + i, "%02x", sout + id++);
+//		//sout += sizeof(unsigned char);
+//		char buf[40];
+//		sprintf(buf, "line: %d %p, %p", i, sout, sout + id);
+//		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "%s", buf);
+//
+//		if (out != 1) {
+//			break;
+//		}
+//
+//		i += 2;
+//	}
+//	sout[i + 1] = '\0';
+//	return sout;
+
+	// Navigating through pointers: mode 2
+	// this mode doesnt use an auxiliar pointer. It goes forward and then backwards
+//	unsigned char* sout = (unsigned char*) malloc(sizeof(unsigned char*) * (length + 1));
+//	int i = 0;
+//	int id = 0;
+//	while(i < length) {
+//
+//		int out = sscanf(s + i, "%02x", sout++);
+//
+//		char buf[40];
+//		sprintf(buf, "line: %d %p", i, sout);
+//		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "%s", buf);
+//
+//		if (out != 1) {
+//			break;
+//		}
+//
+//		i+=2;
+//	}
+//	sout++;
+//	*sout = '\0';
+//	while(length > 0) {
+//		sout--;
+//		length -= 2;
+//	}
+//	sout--;
+//	return sout;
+
+	// Navigating through pointers: mode 3
+	// this mode uses an auxiliar pointer
+//	//http://www.c4learn.com/c-programming/c-incrementing-pointer/
+//	unsigned char* sout = (unsigned char*) malloc(sizeof(unsigned char*) * (length + 1));
+//	unsigned char* soutp = sout;
+//	int i = 0;
+//	while(i < length) {
+//
+//		int out = sscanf(s + i, "%02x", soutp++);
+//
+//		char buf[40];
+//		sprintf(buf, "line: %d %p", i, soutp);
+//		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "%s", buf);
+//
+//		if (out != 1) {
+//			break;
+//		}
+//
+//		i+=2;
+//	}
+//	soutp++;
+//	*soutp = '\0';
+//	return sout;
+
+	// Navigating through pointers: mode 4 (equal to 3 but improved)
+	// this mode uses an auxiliar pointer
+	//http://www.c4learn.com/c-programming/c-incrementing-pointer/
+	unsigned char* sout = (unsigned char*) malloc(sizeof(unsigned char*) * (length + 1));
+	unsigned char* soutp = sout;
+	int i = 0;
+	while(i < length && sscanf(s + i, "%02x", soutp++) == 1) {
+		i+=2;
+	}
+	*(++soutp)= '\0';
+	return sout;
+}
+
+static void ap_rprintf_hex(request_rec *r, const unsigned char* s, int length) {
+
+	for (int i = 0; i < length; i++) {
+		ap_rprintf(r, "%02x", s[i]);
+	}
+}
+
 static int example_handler(request_rec *r) {
 
 	/* First off, we need to check if this is a call for the "example" handler.
@@ -78,12 +192,11 @@ static int example_handler(request_rec *r) {
 
 	/* Get the "digest" key from the query string, if any. */
 	// use const
-	unsigned char *plain = getParam(GET, "plain",
-			"The fox jumped over the lazy dog");
+	unsigned char *plain = getParam(GET, "plain", "The fox jumped over the lazy dog");
 
 	/* Get the "digest" key from the query string, if any. */
 	// use const
-	unsigned char *cipher = getParam(GET, "cipher", "");
+	unsigned char *cipherparam = getParam(GET, "cipher", "");
 
 	// use const
 	unsigned char *iv = "papeo fj aepojfa epfaapeof japeofj apeof ja";
@@ -97,15 +210,32 @@ static int example_handler(request_rec *r) {
 		if (strlen(plain) > 0) {
 			crypto_data ciphereddata = crypto_encrypt(plain, strlen(plain), key, iv);
 
-			ap_rputs("Hello, world!<br/>", r);
-			ap_rprintf(r, "Ciphered data: %s", ciphereddata.data);
+			ap_rprintf(r, "Ciphered data: %s \n<br />", ciphereddata.data);
+			ap_rputs("Ciphered HEX data: ", r);
+			ap_rprintf_hex(r, ciphereddata.data, ciphereddata.length);
+			ap_rputs("\n<br />", r);
+
+			crypto_data deciphereddata = crypto_decrypt(ciphereddata.data, ciphereddata.length, key, iv);
+			ap_rprintf(r, "DECiphered data: %s <br />", deciphereddata.data);
+		}
+
+		if (strlen(cipherparam) > 0) {
+
+			unsigned char* cipher = ap_hex_to_char(r, cipherparam, strlen(cipherparam));
+
+			/* The following line just prints a message to the errorlog */
+			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server,
+					"Cipher is %s / %s / %d", cipher, (cipherparam), strlen(cipherparam));
+
+			crypto_data deciphereddata = crypto_decrypt(cipher, strlen(cipher), key, iv);
+			ap_rprintf(r, "DECiphered data: %s <br />", deciphereddata.data);
 		}
 
 	} else {
 
 		/* The following line just prints a message to the errorlog */
 		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server,
-				"mod_token_auth: key is empty. %s %s", plain, cipher);
+				"mod_token_auth: key is empty. %s %s", plain, cipherparam);
 
 	}
 
