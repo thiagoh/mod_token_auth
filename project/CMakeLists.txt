@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(crypto_c)
+project(mod_token_auth)
 
 set(APPLICATION_NAME ${PROJECT_NAME})
 set(APPLICATION_VERSION_MAJOR "1")

@@ -13,9 +13,6 @@ endif ()
 find_package(CryptoC REQUIRED)
 include_directories(${CryptoC_INCLUDE_DIRS})
 
-find_package(CRYPTOC REQUIRED)
-include_directories(${CRYPTOC_INCLUDE_DIRS})
-
 message("value ${CryptoC_INCLUDE_DIRS}")
 message("value ${CRYPTOC_INCLUDE_DIRS}")
 
