@@ -20,7 +20,7 @@ all: checkdirs $(OBJ)
 	@#echo $(INCLUDES)
 	@#sudo apxs -i -a -l cryptoc -l ssl -l crypto -Wc,-Wall -I . -n $(modname) -c src/core/mod_token_auth.c $(OBJ)
 	@echo "Building the Apache2 module..."
-	#@sudo apxs -i -a -l cryptoc -l ssl -l crypto -Wc,-Wall $(INCLUDES) -n $(modname) -c src/core/mod_token_auth.c $(OBJ)
+	@#@sudo apxs -i -a -l cryptoc -l ssl -l crypto -Wc,-Wall $(INCLUDES) -n $(modname) -c src/core/mod_token_auth.c $(OBJ)
 	@sudo apxs -i -a -l cryptoc -l ssl -l crypto -Wc,-Wall $(INCLUDES) -n $(modname) -c $(SRC)
 	@echo "Success! All done. Module $(modname) built successfully"
 
@@ -39,10 +39,10 @@ $1/%.o: $(patsubst build/%,src/%,$1)/%.c
 	@gcc -std=c99 -std=gnu99 -O $(INCLUDES) -Wall -fPIC -o $$@ -c $$<
 endef
 
-#$(foreach bdir,$(BUILD_DIR),$(eval $(call make-goal,$(bdir))))
+$(foreach bdir,$(BUILD_DIR),$(eval $(call make-goal,$(bdir))))
 
-build/core/%.o: src/core/%.c
-	@gcc -std=c99 -std=gnu99 -O -Isrc/core -I/usr/include/apache2 -I/usr/include/apr-1.0 -fPIC -Wall -o $@ -c $<
+#build/core/%.o: src/core/%.c
+#	@gcc -std=c99 -std=gnu99 -O $(INCLUDES) -fPIC -Wall -o $@ -c $<
 
 .PHONY: clean 
 clean:
