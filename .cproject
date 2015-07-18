@@ -375,7 +375,6 @@
 		<pathentry kind="mac" name="__STDC_IEC_559_COMPLEX__" path="" value="1"/>
 		<pathentry kind="mac" name="__STDC_ISO_10646__" path="" value="201103L"/>
 		<pathentry kind="mac" name="__STDC_NO_THREADS__" path="" value="1"/>
-		<pathentry kind="mac" name="__cplusplus" path="" value="199711L"/>
 		<pathentry kind="mac" name="__GNUG__" path="" value="4"/>
 		<pathentry kind="mac" name="__GXX_WEAK__" path="" value="1"/>
 		<pathentry kind="mac" name="__DEPRECATED" path="" value="1"/>
@@ -383,16 +382,13 @@
 		<pathentry kind="mac" name="__cpp_binary_literals" path="" value="201304"/>
 		<pathentry kind="mac" name="__EXCEPTIONS" path="" value="1"/>
 		<pathentry kind="mac" name="_GNU_SOURCE" path="" value="1"/>
-		<pathentry include="/usr/include/apache2" kind="inc" path="" system="true"/>
 		<pathentry include="/usr/include/apr-1.0" kind="inc" path="" system="true"/>
+		<pathentry include="/usr/include/apache2" kind="inc" path="" system="true"/>
 		<pathentry include="/usr/lib/gcc/x86_64-linux-gnu/4.9/include" kind="inc" path="" system="true"/>
 		<pathentry include="/usr/local/include" kind="inc" path="" system="true"/>
 		<pathentry include="/usr/lib/gcc/x86_64-linux-gnu/4.9/include-fixed" kind="inc" path="" system="true"/>
 		<pathentry include="/usr/include/x86_64-linux-gnu" kind="inc" path="" system="true"/>
 		<pathentry include="/usr/include" kind="inc" path="" system="true"/>
-		<pathentry include="/usr/include/c++/4.9" kind="inc" path="" system="true"/>
-		<pathentry include="/usr/include/x86_64-linux-gnu/c++/4.9" kind="inc" path="" system="true"/>
-		<pathentry include="/usr/include/c++/4.9/backward" kind="inc" path="" system="true"/>
 		<pathentry kind="src" path=""/>
 		<pathentry kind="out" path=""/>
 	</storageModule>

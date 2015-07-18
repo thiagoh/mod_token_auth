@@ -3,6 +3,7 @@
 #include "utils.h"
 #include "apr.h"
 #include "apr_poll.h"
+#include "util_script.h"
 #include "apr_hash.h"
 #include "apr_pools.h"
 #include "ap_config.h"
@@ -66,23 +67,23 @@ static int mod_handler(request_rec *r) {
 
 	/* Get the "digest" key from the query string, if any. */
 	// use const
-	unsigned char *plain = getParam(GET, "plain", "The fox jumped over the lazy dog");
+	unsigned char *plain = (unsigned char*) getParam(GET, "plain", "The fox jumped over the lazy dog");
 
 	/* Get the "digest" key from the query string, if any. */
 	// use const
-	unsigned char *cipherparam = getParam(GET, "cipher", "");
+	unsigned char *cipherparam = (unsigned char*) getParam(GET, "cipher", "");
 
 	// use const
-	unsigned char *iv = "papeo fj aepojfa epfaapeof japeofj apeof ja";
+	unsigned char *iv = (unsigned char*) "papeo fj aepojfa epfaapeof japeofj apeof ja";
 
 	/* Get the "digest" key from the query string, if any. */
 	// use const
-	unsigned char *key = getParam(GET, "key", "The fox jumped over the lazy dog");
+	unsigned char *key = (unsigned char*) getParam(GET, "key", "The fox jumped over the lazy dog");
 
-	if (strlen(key) > 0) {
+	if (strlen((char*)key) > 0) {
 
-		if (strlen(plain) > 0) {
-			crypto_data ciphereddata = crypto_encrypt(plain, strlen(plain), key, iv);
+		if (strlen((char*)plain) > 0) {
+			crypto_data ciphereddata = crypto_encrypt(plain, strlen((char*)plain), key, iv);
 
 			ap_rprintf(r, "Ciphered data: %s \n<br />", ciphereddata.data);
 			ap_rputs("Ciphered HEX data: ", r);
@@ -93,15 +94,15 @@ static int mod_handler(request_rec *r) {
 			ap_rprintf(r, "DECiphered data: %s <br />", deciphereddata.data);
 		}
 
-		if (strlen(cipherparam) > 0) {
+		if (strlen((char*)cipherparam) > 0) {
 
-			unsigned char* cipher = ap_hex_to_char(r, cipherparam, strlen(cipherparam));
+			unsigned char* cipher = ap_hex_to_char(r, cipherparam, strlen((char*)cipherparam));
 
 			/* The following line just prints a message to the errorlog */
 			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server,
-					"Cipher is %s / %s / %d", cipher, (cipherparam), strlen(cipherparam));
+					"Cipher is %s / %s / %d", cipher, (cipherparam), strlen((char*)cipherparam));
 
-			crypto_data deciphereddata = crypto_decrypt(cipher, strlen(cipher), key, iv);
+			crypto_data deciphereddata = crypto_decrypt(cipher, strlen((char*)cipher), key, iv);
 			ap_rprintf(r, "DECiphered data: %s <br />", deciphereddata.data);
 		}
 
@@ -110,7 +111,6 @@ static int mod_handler(request_rec *r) {
 		/* The following line just prints a message to the errorlog */
 		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server,
 				"mod_token_auth: key is empty. %s %s", plain, cipherparam);
-
 	}
 
 	return OK;
