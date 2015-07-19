@@ -98,13 +98,14 @@ static int mod_handler(request_rec *r) {
 	 * If it is, we accept it and do our things, it not, we simply return DECLINED,
 	 * and Apache will try somewhere else.
 	 */
-	if (!r->handler || strcmp(r->handler, "token-auth-handler")) {
+	if (!r->handler || strcmp(r->handler, "token-auth-handler") || config.enabled != TRUE) {
 		return DECLINED;
 	}
 
 	// The first thing we will do is write a simple "Hello, world!" back to the client.
 	ap_set_content_type(r, "text/html"); /* force a raw text output */
 	ap_rputs("Hello, world!<br/>\n", r);
+	ap_rprintf(r, "SecretKey is: %s<br/>\n", config.secretKey);
 	ap_rprintf(r, "parsed_uri.path: %s<br/>\n", r->parsed_uri.path);
 	ap_rprintf(r, "parsed_uri.fragment: %s<br/>\n", r->parsed_uri.fragment);
 	ap_rprintf(r, "parsed_uri.hostinfo: %s<br/>\n", r->parsed_uri.hostinfo);
@@ -144,13 +145,23 @@ static int mod_handler(request_rec *r) {
 		if (strlen((char*)plain) > 0) {
 			crypto_data ciphereddata = crypto_encrypt(plain, strlen((char*)plain), key, iv);
 
-			ap_rprintf(r, "Ciphered data: %s \n<br />", ciphereddata.data);
-			ap_rputs("Ciphered HEX data: ", r);
-			ap_rprintf_hex(r, ciphereddata.data, ciphereddata.length);
-			ap_rputs("\n<br />", r);
+			if (!ciphereddata.error) {
 
-			crypto_data deciphereddata = crypto_decrypt(ciphereddata.data, ciphereddata.length, key, iv);
-			ap_rprintf(r, "DECiphered data: %s <br />", deciphereddata.data);
+				ap_rprintf(r, "Ciphered data: %s \n<br />", ciphereddata.data);
+				ap_rputs("Ciphered HEX data: ", r);
+				ap_rprintf_hex(r, ciphereddata.data, ciphereddata.length);
+				ap_rputs("\n<br />", r);
+
+				crypto_data deciphereddata = crypto_decrypt(ciphereddata.data, ciphereddata.length, key, iv);
+
+				if (!deciphereddata.error) {
+					ap_rprintf(r, "DECiphered data: %s <br />", deciphereddata.data);
+				} else {
+					ap_rprintf(r, "Error!! %s", deciphereddata.errorMessage);
+				}
+			} else {
+				ap_rprintf(r, "Error!! %s", ciphereddata.errorMessage);
+			}
 		}
 
 		if (strlen((char*)cipherparam) > 0) {
@@ -158,10 +169,14 @@ static int mod_handler(request_rec *r) {
 			unsigned char* cipher = ap_hex_to_char(r, cipherparam, strlen((char*)cipherparam));
 
 			/* The following line just prints a message to the errorlog */
-			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "Cipher is %s / %s / %d", cipher, (cipherparam), strlen((char*)cipherparam));
+			//ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "Cipher is %s / %s / %d", cipher, (cipherparam), strlen((char*)cipherparam));
 
 			crypto_data deciphereddata = crypto_decrypt(cipher, strlen((char*)cipher), key, iv);
-			ap_rprintf(r, "DECiphered data: %s <br />", deciphereddata.data);
+			if (!deciphereddata.error) {
+				ap_rprintf(r, "DECiphered data: %s <br />", deciphereddata.data);
+			} else {
+				ap_rprintf(r, "Error!! %s", deciphereddata.errorMessage);
+			}
 		}
 
 	} else {
