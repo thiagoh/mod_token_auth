@@ -172,6 +172,7 @@ static int mod_handler(request_rec *r) {
 			//ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "Cipher is %s / %s / %d", cipher, (cipherparam), strlen((char*)cipherparam));
 
 			crypto_data deciphereddata = crypto_decrypt(cipher, strlen((char*)cipher), key, iv);
+
 			if (!deciphereddata.error) {
 				ap_rprintf(r, "DECiphered data: %s <br />", deciphereddata.data);
 			} else {
@@ -182,7 +183,7 @@ static int mod_handler(request_rec *r) {
 	} else {
 
 		/* The following line just prints a message to the errorlog */
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "mod_token_auth: key is empty. %s %s", plain, cipherparam);
+		//ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "mod_token_auth: key is empty. %s %s", plain, cipherparam);
 	}
 
 	return OK;
