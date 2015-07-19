@@ -8,11 +8,21 @@ Apache module to validate access through token
 Add the following code to your apache to test the examples
 
 ```
-
-  <Location "/example">
-      SetHandler example-handler
+  # Inside <Directory> or <Location> tags
+  <Location "/images">
+       SetHandler token-auth-handler
+       #TokenAuthEnabled false
+       TokenAuthEnabled on
+       TokenAuthSecretKey "The fox jumped over the lazy dog"
+       TokenAuthDuration 4 s
   </Location>
 
-  AddHandler example-handler .doit
+  # Or outsite it
+  
+ AddHandler token-auth-handler .secret
+ TokenAuthEnabled on
+ TokenAuthSecretKey "This key is private. Or you'd have some problems..."
+ TokenAuthDuration 2 h
 
 ```
+
