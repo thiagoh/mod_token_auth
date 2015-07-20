@@ -1,4 +1,4 @@
-#include <crypto.h>
+#include <cryptoc.h>
 #include <stdio.h>
 #include "utils.h"
 #include "apr.h"
@@ -143,7 +143,7 @@ static int mod_handler(request_rec *r) {
 	if (strlen((char*)key) > 0) {
 
 		if (strlen((char*)plain) > 0) {
-			crypto_data ciphereddata = crypto_encrypt(plain, strlen((char*)plain), key, iv);
+			cryptoc_data ciphereddata = cryptoc_encrypt(CRYPTOC_AES_192_CBC, key, iv, plain, strlen((char*)plain));
 
 			if (!ciphereddata.error) {
 
@@ -152,7 +152,7 @@ static int mod_handler(request_rec *r) {
 				ap_rprintf_hex(r, ciphereddata.data, ciphereddata.length);
 				ap_rputs("\n<br />", r);
 
-				crypto_data deciphereddata = crypto_decrypt(ciphereddata.data, ciphereddata.length, key, iv);
+				cryptoc_data deciphereddata = cryptoc_decrypt(CRYPTOC_AES_192_CBC, key, iv, ciphereddata.data, ciphereddata.length);
 
 				if (!deciphereddata.error) {
 					ap_rprintf(r, "DECiphered data: %s <br />", deciphereddata.data);
@@ -171,7 +171,7 @@ static int mod_handler(request_rec *r) {
 			/* The following line just prints a message to the errorlog */
 			//ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "Cipher is %s / %s / %d", cipher, (cipherparam), strlen((char*)cipherparam));
 
-			crypto_data deciphereddata = crypto_decrypt(cipher, strlen((char*)cipher), key, iv);
+			cryptoc_data deciphereddata = cryptoc_decrypt(CRYPTOC_AES_192_CBC, key, iv, cipher, strlen((char*)cipher));
 
 			if (!deciphereddata.error) {
 				ap_rprintf(r, "DECiphered data: %s <br />", deciphereddata.data);
