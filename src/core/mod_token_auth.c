@@ -133,9 +133,6 @@ static int mod_handler(request_rec *r) {
 	// use const
 	unsigned char *cipherparam = (unsigned char*) getParam(GET, "cipher", "");
 
-	// use const
-	unsigned char *iv = (unsigned char*) "papeo fj aepojfa epfaapeof japeofj apeof ja";
-
 	/* Get the "digest" key from the query string, if any. */
 	// use const
 	unsigned char *key = (unsigned char*) getParam(GET, "key", "The fox jumped over the lazy dog");
@@ -143,7 +140,7 @@ static int mod_handler(request_rec *r) {
 	if (strlen((char*)key) > 0) {
 
 		if (strlen((char*)plain) > 0) {
-			cryptoc_data ciphereddata = cryptoc_encrypt(CRYPTOC_AES_192_CBC, key, iv, plain, strlen((char*)plain));
+			cryptoc_data ciphereddata = cryptoc_encrypt(CRYPTOC_AES_192_CBC, key, plain, strlen((char*)plain));
 
 			if (!ciphereddata.error) {
 
@@ -152,7 +149,7 @@ static int mod_handler(request_rec *r) {
 				ap_rprintf_hex(r, ciphereddata.data, ciphereddata.length);
 				ap_rputs("\n<br />", r);
 
-				cryptoc_data deciphereddata = cryptoc_decrypt(CRYPTOC_AES_192_CBC, key, iv, ciphereddata.data, ciphereddata.length);
+				cryptoc_data deciphereddata = cryptoc_decrypt(CRYPTOC_AES_192_CBC, key, ciphereddata.data, ciphereddata.length);
 
 				if (!deciphereddata.error) {
 					ap_rprintf(r, "DECiphered data: %s <br />", deciphereddata.data);
@@ -171,7 +168,7 @@ static int mod_handler(request_rec *r) {
 			/* The following line just prints a message to the errorlog */
 			//ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "Cipher is %s / %s / %d", cipher, (cipherparam), strlen((char*)cipherparam));
 
-			cryptoc_data deciphereddata = cryptoc_decrypt(CRYPTOC_AES_192_CBC, key, iv, cipher, strlen((char*)cipher));
+			cryptoc_data deciphereddata = cryptoc_decrypt(CRYPTOC_AES_192_CBC, key, cipher, strlen((char*)cipher));
 
 			if (!deciphereddata.error) {
 				ap_rprintf(r, "DECiphered data: %s <br />", deciphereddata.data);
