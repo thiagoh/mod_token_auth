@@ -35,3 +35,5 @@ Testing/
 build/
 project/src/.libs/
 project/src/*.slo
+.project
+.cproject
