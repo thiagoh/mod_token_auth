@@ -205,7 +205,7 @@ static int mod_handler_execute(request_rec *r) {
 
 	if (deciphereddata.error) {
 		//ap_rprintf(r, "Error!! %s", deciphereddata.errorMessage);
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "%s", deciphereddata.errorMessage);
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "%s", deciphereddata.errorMessage);
 		return DECLINED;
 	}
 
@@ -219,6 +219,7 @@ static int mod_handler(request_rec *r) {
 	 * and Apache will try somewhere else.
 	 */
 	if (!r->handler || (!strcmp(r->handler, "token-auth-handler") && !strcmp(r->handler, "token-auth-handler-debug")) || config.enabled != TRUE) {
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "no matching");
 		return DECLINED;
 	}
 
