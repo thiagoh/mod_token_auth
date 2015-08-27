@@ -92,15 +92,7 @@ static void log(request_rec *r, const char *fmt, ...) {
 	va_end(args);
 }
 
-static int mod_handler(request_rec *r) {
-
-	/* First off, we need to check if this is a call for the "example" handler.
-	 * If it is, we accept it and do our things, it not, we simply return DECLINED,
-	 * and Apache will try somewhere else.
-	 */
-	if (!r->handler || strcmp(r->handler, "token-auth-handler") || config.enabled != TRUE) {
-		return DECLINED;
-	}
+static int mod_handler_debug(request_rec *r) {
 
 	// The first thing we will do is write a simple "Hello, world!" back to the client.
 	ap_set_content_type(r, "text/html"); /* force a raw text output */
@@ -135,15 +127,17 @@ static int mod_handler(request_rec *r) {
 
 	// use const
 	const unsigned char *iv = (unsigned char*) "aefpojaefojaepfojaepaoejfapeojfaeopjaej";
+	long ivlength = strlen((char*)iv);
 
 	/* Get the "digest" key from the query string, if any. */
 	// use const
 	unsigned char *key = (unsigned char*) getParam(GET, "key", "The fox jumped over the lazy dog");
+	long keylength = strlen((char*)key);
 
 	if (strlen((char*)key) > 0) {
 
 		if (strlen((char*)plain) > 0) {
-			cryptoc_data ciphereddata = cryptoc_encrypt_iv(CRYPTOC_AES_192_CBC, key, iv, plain, strlen((char*)plain));
+			cryptoc_data ciphereddata = cryptoc_encrypt_iv(CRYPTOC_AES_192_CBC, key, keylength, iv, ivlength, plain, strlen((char*)plain));
 
 			if (!ciphereddata.error) {
 
@@ -152,7 +146,7 @@ static int mod_handler(request_rec *r) {
 				ap_rprintf_hex(r, ciphereddata.data, ciphereddata.length);
 				ap_rputs("\n<br />", r);
 
-				cryptoc_data deciphereddata = cryptoc_decrypt_iv(CRYPTOC_AES_192_CBC, key, iv, ciphereddata.data, ciphereddata.length);
+				cryptoc_data deciphereddata = cryptoc_decrypt_iv(CRYPTOC_AES_192_CBC, key, keylength, iv, ivlength, ciphereddata.data, ciphereddata.length);
 
 				if (!deciphereddata.error) {
 					deciphereddata.data[deciphereddata.length] = '\0';
@@ -173,7 +167,7 @@ static int mod_handler(request_rec *r) {
 			/* The following line just prints a message to the errorlog */
 			//ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "Cipher is %s / %s / %d", cipher, (cipherparam), strlen((char*)cipherparam));
 
-			cryptoc_data deciphereddata = cryptoc_decrypt_iv(CRYPTOC_AES_192_CBC, key, iv, cipher, strlen((char*)cipher));
+			cryptoc_data deciphereddata = cryptoc_decrypt_iv(CRYPTOC_AES_192_CBC, key, keylength, iv, ivlength, cipher, strlen((char*)cipher));
 
 			if (!deciphereddata.error) {
 				deciphereddata.data[deciphereddata.length] = '\0';
@@ -188,6 +182,51 @@ static int mod_handler(request_rec *r) {
 
 		/* The following line just prints a message to the errorlog */
 		//ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "mod_token_auth: key is empty. %s %s", plain, cipherparam);
+	}
+
+	return OK;
+}
+
+static int mod_handler_execute(request_rec *r) {
+
+	apr_table_t*GET;
+	ap_args_to_table(r, &GET);
+
+	/* Get the "digest" key from the query string, if any. */
+	const char *token = getParam(GET, "token", "");
+
+	if (strlen((char*)token) == 0) {
+		return DECLINED;
+	}
+
+	long keylength = strlen((char*) config.secretKey);
+
+	cryptoc_data deciphereddata = cryptoc_decrypt(CRYPTOC_AES_192_CBC, config.secretKey, keylength, token, strlen((char*)token));
+
+	if (deciphereddata.error) {
+		//ap_rprintf(r, "Error!! %s", deciphereddata.errorMessage);
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "%s", deciphereddata.errorMessage);
+		return DECLINED;
+	}
+
+	return OK;
+}
+
+static int mod_handler(request_rec *r) {
+
+	/* First off, we need to check if this is a call for the "example" handler.
+	 * If it is, we accept it and do our things, it not, we simply return DECLINED,
+	 * and Apache will try somewhere else.
+	 */
+	if (!r->handler || (!strcmp(r->handler, "token-auth-handler") && !strcmp(r->handler, "token-auth-handler-debug")) || config.enabled != TRUE) {
+		return DECLINED;
+	}
+
+	if (!strcmp(r->handler, "token-auth-handler")) {
+		return mod_handler_execute(r);
+
+	} else if (!strcmp(r->handler, "token-auth-handler-debug")) {
+		return mod_handler_debug(r);
 	}
 
 	return OK;
