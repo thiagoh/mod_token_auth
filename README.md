@@ -5,6 +5,9 @@ Apache module to validate access through token
 ```
 check this out
 https://www.openssl.org/docs/manmaster/apps/enc.html
+
+and this
+openssl enc -aes-192-cbc -a -in text -e -nosalt -iv "30313233343536373839313233343536" -K "54686520666f78206a756d706564206f76657220746865206c617a7920646f67" -p
 ```
 
 ## Apache2 config
