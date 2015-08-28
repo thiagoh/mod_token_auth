@@ -201,11 +201,24 @@ static int mod_handler_execute(request_rec *r) {
 		return DECLINED;
 	}
 
-	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "token: %s with key %s", token, config.secretKey);
-
 	long keylength = strlen((char*) config.secretKey);
 
-	cryptoc_data deciphereddata = cryptoc_decrypt(CRYPTOC_AES_192_CBC, config.secretKey, keylength, token, tokenLength);
+	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "token: %s with key %s with len %d", token, config.secretKey, keylength);
+
+	unsigned char* data = (unsigned char*) malloc(sizeof(unsigned char) * tokenLength);
+	int dataLen = cryptoc_base64_decode(token, tokenLength, data);
+
+	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "Base64Decode: ");
+
+	int x;
+	for (x = 0; x < dataLen; x++) {
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "%02x", data[x]);
+	}
+
+	unsigned char* iv = (unsigned char *) "01234567891234560000000000000000";
+	int ivlength = strlen((const char*) iv);
+
+	cryptoc_data deciphereddata = cryptoc_decrypt_iv(CRYPTOC_AES_192_CBC, config.secretKey, keylength, iv, ivlength, data, dataLen);
 
 	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Deciphering data: %s", deciphereddata.data);
 
