@@ -2,6 +2,10 @@
 
 Apache module to validate access through token
 
+```
+check this out
+https://www.openssl.org/docs/manmaster/apps/enc.html
+```
 
 ## Apache2 config
 
