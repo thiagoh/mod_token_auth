@@ -3,6 +3,8 @@
 Apache module to validate access through token
 
 ```
+try to use another algorithm
+
 check this out
 https://www.openssl.org/docs/manmaster/apps/enc.html
 
