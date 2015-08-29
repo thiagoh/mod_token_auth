@@ -3,7 +3,7 @@
 Apache module to validate access through token
 
 ```
-try to use another algorithm
+try to use other algorithm than AES
 
 check this out
 https://www.openssl.org/docs/manmaster/apps/enc.html
