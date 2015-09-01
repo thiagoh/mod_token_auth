@@ -221,10 +221,11 @@ static int mod_handler_execute(request_rec *r) {
 		return DECLINED;
 	}
 
-	unsigned char* finalData = (unsigned char*) malloc(sizeof(unsigned char) * deciphereddata.length);
+	unsigned char* finalData = (unsigned char*) malloc(sizeof(unsigned char) * deciphereddata.length + 1);
 	strncpy(finalData, deciphereddata.data, deciphereddata.length);
+	finalData[deciphereddata.length + 1] = '\0';
 
-	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Deciphering data: %s", deciphereddata.data);
+	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Deciphering data: %s", finalData);
 
 	return OK;
 }
