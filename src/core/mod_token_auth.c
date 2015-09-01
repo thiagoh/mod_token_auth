@@ -92,6 +92,16 @@ static void log(request_rec *r, const char *fmt, ...) {
 	va_end(args);
 }
 
+void _free_crypto_data(cryptoc_data* deciphereddata, unsigned char* dataDecoded, unsigned char* ivDecoded) {
+
+	free(dataDecoded);
+	free(ivDecoded);
+
+	free(deciphereddata->data);
+	free(deciphereddata->tag);
+	free(deciphereddata->errorMessage);
+}
+
 static int mod_handler_debug(request_rec *r) {
 
 	// The first thing we will do is write a simple "Hello, world!" back to the client.
@@ -203,27 +213,50 @@ static int mod_handler_execute(request_rec *r) {
 
 	long keylength = strlen((char*) config.secretKey);
 
-	unsigned char* dataDecoded = (unsigned char*) malloc(sizeof(unsigned char) * tokenLength);
+	unsigned char* dataDecoded = 0;
+	unsigned char* ivDecoded = 0;
+	cryptoc_data * deciphereddata = 0;
+
+	dataDecoded = (unsigned char*) malloc(sizeof(unsigned char) * tokenLength);
+
+	if (!dataDecoded) {
+		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
+		return DECLINED;
+	}
+
 	int dataDecodedLen = cryptoc_base64_decode(token, tokenLength, dataDecoded);
 
 	unsigned char* ivEncoded = (unsigned char *) "dGFyZ2V0AAA=";
 	unsigned char* key= (unsigned char *) "The fox jumped over the lazy dog";
 
-	unsigned char* ivDecoded = (unsigned char*) malloc(sizeof(unsigned char) * strlen((const char*)ivEncoded));
-	int ivDecodedLen = cryptoc_base64_decode(ivEncoded, strlen((const char*)ivEncoded), ivDecoded);
+	ivDecoded = (unsigned char*) malloc(sizeof(unsigned char) * strlen((const char*)ivEncoded));
 
-	cryptoc_data deciphereddata = cryptoc_decrypt_iv(CRYPTOC_DES_EDE3_CBC, config.secretKey, keylength, ivDecoded, ivDecodedLen, dataDecoded, dataDecodedLen);
-
-	if (deciphereddata.error) {
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Deciphering error: %s", deciphereddata.errorMessage);
+	if (!ivDecoded) {
+		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
 		return DECLINED;
 	}
 
-	unsigned char* finalData = (unsigned char*) malloc(sizeof(unsigned char) * deciphereddata.length + 1);
-	strncpy(finalData, deciphereddata.data, deciphereddata.length);
-	finalData[deciphereddata.length + 1] = '\0';
+	int ivDecodedLen = cryptoc_base64_decode(ivEncoded, strlen((const char*)ivEncoded), ivDecoded);
+	*deciphereddata = cryptoc_decrypt_iv(CRYPTOC_DES_EDE3_CBC, config.secretKey, keylength, ivDecoded, ivDecodedLen, dataDecoded, dataDecodedLen);
+
+	if (deciphereddata->error) {
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Deciphering error: %s", deciphereddata->errorMessage);
+		_free_crypto_data(&deciphereddata, dataDecoded, ivDecoded);
+		return DECLINED;
+	}
+
+	unsigned char* finalData = 0;
+	finalData = (unsigned char*) malloc(sizeof(unsigned char) * deciphereddata->length + 1);
+
+	if (!finalData){
+		return DECLINED;
+	}
+
+	strncpy(finalData, deciphereddata->data, deciphereddata->length);
+	finalData[deciphereddata->length + 1] = '\0';
 
 	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Deciphering data: %s", finalData);
+	_free_crypto_data(&deciphereddata, dataDecoded, ivDecoded);
 
 	return OK;
 }
