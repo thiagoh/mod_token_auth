@@ -215,14 +215,30 @@ static int mod_handler_execute(request_rec *r) {
 
 	unsigned char* dataDecoded = 0;
 	unsigned char* ivDecoded = 0;
-	cryptoc_data * deciphereddata = 0;
+	cryptoc_data* deciphereddata = 0;
+
+	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "0");
+
+	deciphereddata = (cryptoc_data*) malloc(sizeof(cryptoc_data));
+
+	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "1");
+
+	if (!deciphereddata) {
+		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
+		return DECLINED;
+	}
+
+	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "2");
 
 	dataDecoded = (unsigned char*) malloc(sizeof(unsigned char) * tokenLength);
+	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "3");
 
 	if (!dataDecoded) {
 		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
 		return DECLINED;
 	}
+
+	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "4");
 
 	int dataDecodedLen = cryptoc_base64_decode(token, tokenLength, dataDecoded);
 
@@ -231,19 +247,27 @@ static int mod_handler_execute(request_rec *r) {
 
 	ivDecoded = (unsigned char*) malloc(sizeof(unsigned char) * strlen((const char*)ivEncoded));
 
+	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "5");
+
 	if (!ivDecoded) {
 		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
 		return DECLINED;
 	}
 
+	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "6");
+
 	int ivDecodedLen = cryptoc_base64_decode(ivEncoded, strlen((const char*)ivEncoded), ivDecoded);
 	*deciphereddata = cryptoc_decrypt_iv(CRYPTOC_DES_EDE3_CBC, config.secretKey, keylength, ivDecoded, ivDecodedLen, dataDecoded, dataDecodedLen);
 
+	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "7");
+
 	if (deciphereddata->error) {
 		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Deciphering error: %s", deciphereddata->errorMessage);
-		_free_crypto_data(&deciphereddata, dataDecoded, ivDecoded);
+		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
 		return DECLINED;
 	}
+
+	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "8");
 
 	unsigned char* finalData = 0;
 	finalData = (unsigned char*) malloc(sizeof(unsigned char) * deciphereddata->length + 1);
@@ -256,7 +280,7 @@ static int mod_handler_execute(request_rec *r) {
 	finalData[deciphereddata->length + 1] = '\0';
 
 	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Deciphering data: %s", finalData);
-	_free_crypto_data(&deciphereddata, dataDecoded, ivDecoded);
+	_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
 
 	return OK;
 }
