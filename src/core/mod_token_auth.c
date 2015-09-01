@@ -205,28 +205,26 @@ static int mod_handler_execute(request_rec *r) {
 
 	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "token: %s with key %s with len %d", token, config.secretKey, keylength);
 
-	unsigned char* data = (unsigned char*) malloc(sizeof(unsigned char) * tokenLength);
-	int dataLen = cryptoc_base64_decode(token, tokenLength, data);
+	unsigned char* dataDecoded = (unsigned char*) malloc(sizeof(unsigned char) * tokenLength);
+	int dataDecodedLen = cryptoc_base64_decode(token, tokenLength, dataDecoded);
 
-	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "Base64Decode: ");
+	unsigned char* ivEncoded = (unsigned char *) "dGFyZ2V0AAA=";
+	unsigned char* key= (unsigned char *) "The fox jumped over the lazy dog";
 
-	int x;
-	for (x = 0; x < dataLen; x++) {
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, "%02x", data[x]);
-	}
+	unsigned char* ivDecoded = (unsigned char*) malloc(sizeof(unsigned char) * strlen((const char*)ivEncoded));
+	int ivDecodedLen = cryptoc_base64_decode(ivEncoded, strlen((const char*)ivEncoded), ivDecoded);
 
-	unsigned char* iv = (unsigned char *) "01234567891234560000000000000000";
-	int ivlength = strlen((const char*) iv);
-
-	cryptoc_data deciphereddata = cryptoc_decrypt_iv(CRYPTOC_AES_192_CBC, config.secretKey, keylength, iv, ivlength, data, dataLen);
-
-	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Deciphering data: %s", deciphereddata.data);
+	cryptoc_data deciphereddata = cryptoc_decrypt_iv(CRYPTOC_DES_EDE3_CBC, config.secretKey, keylength, ivDecoded, ivDecodedLen, dataDecoded, dataDecodedLen);
 
 	if (deciphereddata.error) {
-		//ap_rprintf(r, "Error!! %s", deciphereddata.errorMessage);
 		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Deciphering error: %s", deciphereddata.errorMessage);
 		return DECLINED;
 	}
+
+	unsigned char* finalData = (unsigned char*) malloc(sizeof(unsigned char) * deciphereddata.length);
+	strncpy(finalData, deciphereddata.data, deciphereddata.length);
+
+	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Deciphering data: %s", deciphereddata.data);
 
 	return OK;
 }
