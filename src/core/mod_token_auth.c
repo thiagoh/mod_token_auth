@@ -203,8 +203,6 @@ static int mod_handler_execute(request_rec *r) {
 
 	long keylength = strlen((char*) config.secretKey);
 
-	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "token: %s with key %s with len %d", token, config.secretKey, keylength);
-
 	unsigned char* dataDecoded = (unsigned char*) malloc(sizeof(unsigned char) * tokenLength);
 	int dataDecodedLen = cryptoc_base64_decode(token, tokenLength, dataDecoded);
 
