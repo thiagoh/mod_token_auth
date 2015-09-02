@@ -5,6 +5,8 @@ Apache module to validate access through token
 ```
 try to use other algorithm than AES
 
+Using DESede
+
 check this out
 https://www.openssl.org/docs/manmaster/apps/enc.html
 
