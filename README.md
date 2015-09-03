@@ -3,9 +3,8 @@
 Apache module to validate access through token
 
 ```
-try to use other algorithm than AES
-
-Using DESede
+TODO: By now I'm using DESede but it would be nice to make it dynamic
+TODO: Try to make it work with AES
 
 check this out
 https://www.openssl.org/docs/manmaster/apps/enc.html
