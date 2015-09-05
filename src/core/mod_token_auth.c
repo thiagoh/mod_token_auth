@@ -63,7 +63,7 @@ const char *directive_set_iv(cmd_parms *cmd, void *cfg, const char *arg) {
 /* Handler for the "algorithm" directive */
 const char *directive_set_algorithm(cmd_parms *cmd, void *cfg, const char *arg) {
 
-    config.algorithm = algorithm;
+    config.algorithm = arg;
     return NULL;
 }
 
@@ -227,20 +227,34 @@ static int mod_handler_execute(request_rec *r) {
 	size_t tokenLength = strlen((char*)token);
 
 	if (tokenLength == 0) {
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "no token");
+		//ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "no token");
+		return DECLINED;
+	}
+
+	if (!config.secretKey) {
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "No such secretKey set");
+		return DECLINED;
+	}
+
+	if (!config.iv) {
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "No such IV set");
+		return DECLINED;
+	}
+
+	if (!config.algorithm) {
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "No such algorithm set");
 		return DECLINED;
 	}
 
 	unsigned char* key = config.secretKey;
 	long keylength = strlen((char*) config.secretKey);
 	unsigned char* dataDecoded = 0;
-	unsigned char* ivDecoded = 0;
+	unsigned char* ivDecoded = config.iv;
+	int ivDecodedLen = strlen((char*) config.iv);
 	cryptoc_data* deciphereddata = 0;
 
 	//unsigned char* ivEncoded = (unsigned char *) "dGFyZ2V0AAA=";
 	//int ivDecodedLen = cryptoc_base64_decode(ivEncoded, strlen((const char*)ivEncoded), ivDecoded);
-	unsigned char* ivDecoded = config.iv;
-	int ivDecodedLen = strlen((char*) config.iv);
 
 	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "0");
 
