@@ -32,6 +32,7 @@ struct config_s {
     int         enabled;		/* Enable or disable our module */
     const char* algorithm;		/* Used algorithm */
     const char* secretKey;		/* Secret Key */
+    const char* tokenParam;		/* Token param (default is token) */
     const char* iv;    			/* Secret Key */
     time_duration_s duration;	/* How long the link might be tested as valid */
 };
@@ -50,6 +51,13 @@ static const char *directive_set_enabled(cmd_parms *cmd, void *cfg, const char *
 const char *directive_set_secret_key(cmd_parms *cmd, void *cfg, const char *arg) {
 
     config.secretKey = arg;
+    return NULL;
+}
+
+/* Handler for the "TokenParam" directive */
+const char *directive_set_token_param(cmd_parms *cmd, void *cfg, const char *arg) {
+
+    config.tokenParam = arg;
     return NULL;
 }
 
@@ -87,6 +95,7 @@ static const command_rec token_auth_directives[] = {
     AP_INIT_TAKE1("tokenAuthEnabled", directive_set_enabled, NULL, ACCESS_CONF, "Enable or disable mod_token_auth"),
     AP_INIT_TAKE1("tokenAuthSecretKey", directive_set_secret_key, NULL, ACCESS_CONF, "The secret key"),
     AP_INIT_TAKE1("tokenAuthIV", directive_set_iv, NULL, ACCESS_CONF, "The initialization vector"),
+    AP_INIT_TAKE1("tokenAuthTokenParam", directive_set_token_param, NULL, ACCESS_CONF, "The token param"),
     AP_INIT_TAKE1("tokenAuthAlgorithm", directive_set_algorithm, NULL, ACCESS_CONF, "The algorithm to be used"),
     AP_INIT_TAKE2("tokenAuthDuration", directive_set_duration, NULL, ACCESS_CONF, "Special action value!"),
     { NULL }
@@ -98,6 +107,7 @@ static void register_hooks(apr_pool_t *pool) {
 	config.duration.duration = 1;
 	config.duration.unit = 'm';
 	config.secretKey = 0;
+	config.tokenParam = 0;
 	config.iv = 0;
 	config.algorithm = 0;
 
@@ -134,6 +144,10 @@ static int mod_handler_debug(request_rec *r) {
 
 	if (config.iv) {
 		ap_rprintf(r, "IV is: %s<br/>\n", config.iv);
+	}
+
+	if (config.tokenParam) {
+		ap_rprintf(r, "TokenParam is: %s<br/>\n", config.tokenParam);
 	}
 
 	if (config.algorithm) {
@@ -249,8 +263,8 @@ static int mod_handler_execute(request_rec *r) {
 	apr_table_t*GET;
 	ap_args_to_table(r, &GET);
 
-	/* Get the "digest" key from the query string, if any. */
-	const char *token = getParam(GET, "token", "");
+	char* tokenParam = !config.tokenParam ? "token" : config.tokenParam;
+	const char *token = getParam(GET, tokenParam, "");
 	size_t tokenLength = strlen((char*)token);
 
 	if (tokenLength == 0) {
