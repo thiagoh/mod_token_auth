@@ -29,9 +29,11 @@ struct time_duration_s {
 
 typedef struct config_s config_s;
 struct config_s {
-    int         enabled;      /* Enable or disable our module */
-    const char* secretKey;    /* Secret Key*/
-    time_duration_s duration; /* How long the link might be tested as valid */
+    int         enabled;		/* Enable or disable our module */
+    const char* algorithm;		/* Used algorithm */
+    const char* secretKey;		/* Secret Key */
+    const char* iv;    			/* Secret Key */
+    time_duration_s duration;	/* How long the link might be tested as valid */
 };
 
 static config_s config;
@@ -44,10 +46,24 @@ static const char *directive_set_enabled(cmd_parms *cmd, void *cfg, const char *
     return NULL;
 }
 
-/* Handler for the "examplePath" directive */
+/* Handler for the "secretKey" directive */
 const char *directive_set_secret_key(cmd_parms *cmd, void *cfg, const char *arg) {
 
     config.secretKey = arg;
+    return NULL;
+}
+
+/* Handler for the "iv" directive */
+const char *directive_set_iv(cmd_parms *cmd, void *cfg, const char *arg) {
+
+    config.iv = arg;
+    return NULL;
+}
+
+/* Handler for the "algorithm" directive */
+const char *directive_set_algorithm(cmd_parms *cmd, void *cfg, const char *arg) {
+
+    config.algorithm = algorithm;
     return NULL;
 }
 
@@ -68,8 +84,10 @@ const char *directive_set_duration(cmd_parms *cmd, void *cfg, const char *arg1, 
 }
 
 static const command_rec token_auth_directives[] = {
-    AP_INIT_TAKE1("tokenAuthEnabled", directive_set_enabled, NULL, ACCESS_CONF, "Enable or disable mod_example"),
-    AP_INIT_TAKE1("tokenAuthSecretKey", directive_set_secret_key, NULL, ACCESS_CONF, "The path to whatever"),
+    AP_INIT_TAKE1("tokenAuthEnabled", directive_set_enabled, NULL, ACCESS_CONF, "Enable or disable mod_token_auth"),
+    AP_INIT_TAKE1("tokenAuthSecretKey", directive_set_secret_key, NULL, ACCESS_CONF, "The secret key"),
+    AP_INIT_TAKE1("tokenAuthIV", directive_set_iv, NULL, ACCESS_CONF, "The initialization vector"),
+    AP_INIT_TAKE1("tokenAuthAlgorithm", directive_set_algorithm, NULL, ACCESS_CONF, "The algorithm to be used"),
     AP_INIT_TAKE2("tokenAuthDuration", directive_set_duration, NULL, ACCESS_CONF, "Special action value!"),
     { NULL }
 };
@@ -80,6 +98,8 @@ static void register_hooks(apr_pool_t *pool) {
 	config.duration.duration = 1;
 	config.duration.unit = 'm';
 	config.secretKey = 0;
+	config.iv = 0;
+	config.algorithm = 0;
 
 	/* Hook the request handler */
 	ap_hook_handler(mod_handler, NULL, NULL, APR_HOOK_LAST);
