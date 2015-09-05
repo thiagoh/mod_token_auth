@@ -231,11 +231,16 @@ static int mod_handler_execute(request_rec *r) {
 		return DECLINED;
 	}
 
+	unsigned char* key = config.secretKey;
 	long keylength = strlen((char*) config.secretKey);
-
 	unsigned char* dataDecoded = 0;
 	unsigned char* ivDecoded = 0;
 	cryptoc_data* deciphereddata = 0;
+
+	//unsigned char* ivEncoded = (unsigned char *) "dGFyZ2V0AAA=";
+	//int ivDecodedLen = cryptoc_base64_decode(ivEncoded, strlen((const char*)ivEncoded), ivDecoded);
+	unsigned char* ivDecoded = config.iv;
+	int ivDecodedLen = strlen((char*) config.iv);
 
 	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "0");
 
@@ -262,9 +267,6 @@ static int mod_handler_execute(request_rec *r) {
 
 	int dataDecodedLen = cryptoc_base64_decode(token, tokenLength, dataDecoded);
 
-	unsigned char* ivEncoded = (unsigned char *) "dGFyZ2V0AAA=";
-
-	ivDecoded = (unsigned char*) malloc(sizeof(unsigned char) * strlen((const char*)ivEncoded));
 
 	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "5");
 
@@ -275,8 +277,7 @@ static int mod_handler_execute(request_rec *r) {
 
 	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "6");
 
-	int ivDecodedLen = cryptoc_base64_decode(ivEncoded, strlen((const char*)ivEncoded), ivDecoded);
-	*deciphereddata = cryptoc_decrypt_iv(CRYPTOC_DES_EDE3_CBC, config.secretKey, keylength, ivDecoded, ivDecodedLen, dataDecoded, dataDecodedLen);
+	*deciphereddata = cryptoc_decrypt_iv(CRYPTOC_DES_EDE3_CBC, key, keylength, ivDecoded, ivDecodedLen, dataDecoded, dataDecodedLen);
 
 	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "7");
 
