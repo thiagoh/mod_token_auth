@@ -156,6 +156,21 @@ static int mod_handler_debug(request_rec *r) {
 	apr_array_header_t*POST;
 	ap_parse_form_data(r, NULL, &POST, -1, 8192);
 
+	if (!config.secretKey) {
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "No such secretKey set");
+		return DECLINED;
+	}
+
+	if (!config.iv) {
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "No such IV set");
+		return DECLINED;
+	}
+
+	if (!config.algorithm) {
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "No such algorithm set");
+		return DECLINED;
+	}
+
 	/* Get the "digest" key from the query string, if any. */
 	const char *digestType = getParam(GET, "digest", "sha1");
 
