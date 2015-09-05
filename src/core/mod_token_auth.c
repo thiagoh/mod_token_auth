@@ -127,7 +127,19 @@ static int mod_handler_debug(request_rec *r) {
 	// The first thing we will do is write a simple "Hello, world!" back to the client.
 	ap_set_content_type(r, "text/html"); /* force a raw text output */
 	ap_rputs("Hello, world!<br/>\n", r);
-	ap_rprintf(r, "SecretKey is: %s<br/>\n", config.secretKey);
+
+	if (config.secretKey) {
+		ap_rprintf(r, "SecretKey is: %s<br/>\n", config.secretKey);
+	}
+
+	if (config.iv) {
+		ap_rprintf(r, "IV is: %s<br/>\n", config.iv);
+	}
+
+	if (config.algorithm) {
+		ap_rprintf(r, "Algorithm is: %s<br/>\n", config.algorithm);
+	}
+
 	ap_rprintf(r, "parsed_uri.path: %s<br/>\n", r->parsed_uri.path);
 	ap_rprintf(r, "parsed_uri.fragment: %s<br/>\n", r->parsed_uri.fragment);
 	ap_rprintf(r, "parsed_uri.hostinfo: %s<br/>\n", r->parsed_uri.hostinfo);
