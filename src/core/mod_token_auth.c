@@ -263,7 +263,6 @@ static int mod_handler_execute(request_rec *r) {
 	int dataDecodedLen = cryptoc_base64_decode(token, tokenLength, dataDecoded);
 
 	unsigned char* ivEncoded = (unsigned char *) "dGFyZ2V0AAA=";
-	unsigned char* key= (unsigned char *) "The fox jumped over the lazy dog";
 
 	ivDecoded = (unsigned char*) malloc(sizeof(unsigned char) * strlen((const char*)ivEncoded));
 
