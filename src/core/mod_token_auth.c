@@ -186,9 +186,6 @@ static int mod_handler_debug(request_rec *r) {
 	}
 
 	/* Get the "digest" key from the query string, if any. */
-	const char *digestType = getParam(GET, "digest", "sha1");
-
-	/* Get the "digest" key from the query string, if any. */
 	// use const
 	unsigned char *plain = (unsigned char*) getParam(GET, "plain", "The fox jumped over the lazy dog");
 
@@ -263,7 +260,7 @@ static int mod_handler_execute(request_rec *r) {
 	apr_table_t*GET;
 	ap_args_to_table(r, &GET);
 
-	char* tokenParam = !config.tokenParam ? "token" : config.tokenParam;
+	const char* tokenParam = config.tokenParam == 0 ? "token" : config.tokenParam;
 	const char *token = getParam(GET, tokenParam, "");
 	size_t tokenLength = strlen((char*)token);
 

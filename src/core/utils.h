@@ -23,9 +23,9 @@
 #include "http_protocol.h"
 #include "http_request.h"
 
-char* getParam(apr_table_t* GET, const char* key, const char* default_);
-void print(const unsigned char* s, int length);
+const char* getParam(apr_table_t* GET, const char* key, const char* default_);
 const char* sprint(const unsigned char* s, int length);
+void print(const unsigned char* s, int length);
 unsigned char* ap_hex_to_char(request_rec *r, unsigned const char* s, int length);
 void ap_rprintf_hex(request_rec *r, const unsigned char* s, int length);
 
