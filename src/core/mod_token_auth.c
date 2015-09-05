@@ -284,11 +284,11 @@ static int mod_handler_execute(request_rec *r) {
 		return DECLINED;
 	}
 
-	unsigned char* key = config.secretKey;
+	const unsigned char* key = config.secretKey;
+	const unsigned char* ivDecoded = config.iv;
 	long keylength = strlen((char*) config.secretKey);
-	unsigned char* dataDecoded = 0;
-	unsigned char* ivDecoded = config.iv;
 	int ivDecodedLen = strlen((char*) config.iv);
+	unsigned char* dataDecoded = 0;
 	cryptoc_data* deciphereddata = 0;
 
 	//unsigned char* ivEncoded = (unsigned char *) "dGFyZ2V0AAA=";
