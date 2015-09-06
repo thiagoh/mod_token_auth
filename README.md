@@ -1,6 +1,6 @@
 # mod_token_auth
 
-Apache module to validate access through token
+Apache module to validate access through ciphered  token AES and DESede
 
 ```
 TODO: By now I'm using DESede but it would be nice to make it dynamic
