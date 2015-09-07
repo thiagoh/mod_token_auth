@@ -94,12 +94,6 @@ const char *directive_set_duration(cmd_parms *cmd, void *cfg, const char *arg1, 
 
 	config.duration.duration = 1;
 	config.duration.unit = 'm';
-
-//    if(!strcasecmp(arg1, "file")) config.typeOfAction = 0x01;
-//    else config.typeOfAction = 0x02;
-//
-//    if(!strcasecmp(arg2, "deny")) config.typeOfAction += 0x10;
-//    else config.typeOfAction += 0x20;
     return NULL;
 }
 
