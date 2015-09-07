@@ -25,8 +25,8 @@ Add the following code to your apache to test the examples
        TokenAuthEnabled on
        TokenAuthSecretKey "The fox jumped over the lazy dog"
        TokenAuthIV "target"
-		  TokenAuthAlgorithm DESede
-		  TokenAuthTokenParam t
+       TokenAuthAlgorithm DESede
+       TokenAuthTokenParam t
        TokenAuthDuration 4 s
   </Location>
 
