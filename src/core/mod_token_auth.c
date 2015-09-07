@@ -30,6 +30,7 @@ struct time_duration_s {
 typedef struct config_s config_s;
 struct config_s {
     int         enabled;		/* Enable or disable our module */
+    int			debugLevel;		/* Sets the debug level */
     const char* algorithm;		/* Used algorithm */
     const char* secretKey;		/* Secret Key */
     const char* tokenParam;		/* Token param (default is token) */
@@ -81,6 +82,13 @@ const char *directive_set_algorithm(cmd_parms *cmd, void *cfg, const char *arg) 
     return NULL;
 }
 
+/* Handler for the "debug" directive */
+const char *directive_set_debug_level(cmd_parms *cmd, void *cfg, const char *arg) {
+
+    config.debugLevel = atoi(arg);
+    return NULL;
+}
+
 /* Handler for the "exampleAction" directive */
 /* Let's pretend this one takes one argument (file or db), and a second (deny or allow), */
 /* and we store it in a bit-wise manner. */
@@ -103,6 +111,7 @@ static const command_rec token_auth_directives[] = {
     AP_INIT_TAKE1("tokenAuthIV", directive_set_iv, NULL, ACCESS_CONF, "The initialization vector"),
     AP_INIT_TAKE1("tokenAuthTokenParam", directive_set_token_param, NULL, ACCESS_CONF, "The token param"),
     AP_INIT_TAKE1("tokenAuthAlgorithm", directive_set_algorithm, NULL, ACCESS_CONF, "The algorithm to be used"),
+    AP_INIT_TAKE1("tokenAuthDebug", directive_set_debug_level, NULL, ACCESS_CONF, "The debug level"),
     AP_INIT_TAKE2("tokenAuthDuration", directive_set_duration, NULL, ACCESS_CONF, "Special action value!"),
     { NULL }
 };
@@ -110,6 +119,7 @@ static const command_rec token_auth_directives[] = {
 static void register_hooks(apr_pool_t *pool) {
 
 	config.enabled = 1;
+	config.debugLevel = 0;
 	config.duration.duration = 1;
 	config.duration.unit = 'm';
 	config.secretKey = 0;
@@ -270,26 +280,37 @@ static int mod_handler_execute(request_rec *r) {
 	size_t tokenLength = strlen((char*)token);
 
 	if (tokenLength == 0) {
-		//ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "no token");
+		if (config.debugLevel >= 2) {
+			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "no token");
+		}
 		return DECLINED;
 	}
 
 	if (!config.secretKey) {
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "No such secretKey set");
+		if (config.debugLevel >= 1) {
+			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "No such secretKey set");
+		}
 		return DECLINED;
 	}
 
 	if (!config.iv) {
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "No such IV set");
+		if (config.debugLevel >= 1) {
+			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "No such IV set");
+		}
 		return DECLINED;
 	}
 
 	if (!config.algorithm) {
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "No such algorithm set");
+		if (config.debugLevel >= 1) {
+			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "No such algorithm set");
+		}
 		return DECLINED;
 	}
 
 	if (!strcasecmp(config.algorithm, "aes") && !strcasecmp(config.algorithm, "desede")) {
+		if (config.debugLevel >= 2) {
+			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "No such algorithm %s exists", config.algorithm);
+		}
 		return DECLINED;
 	}
 
@@ -303,18 +324,24 @@ static int mod_handler_execute(request_rec *r) {
 	//unsigned char* ivEncoded = (unsigned char *) "dGFyZ2V0AAA=";
 	//int ivDecodedLen = cryptoc_base64_decode(ivEncoded, strlen((const char*)ivEncoded), ivDecoded);
 
-	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "0");
+	if (config.debugLevel >= 3) {
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "0");
+	}
 
 	deciphereddata = (cryptoc_data*) malloc(sizeof(cryptoc_data));
 
-	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "1");
+	if (config.debugLevel >= 3) {
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "1");
+	}
 
 	if (!deciphereddata) {
 		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
 		return DECLINED;
 	}
 
-	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "2");
+	if (config.debugLevel >= 3) {
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "2");
+	}
 
 	dataDecoded = (unsigned char*) malloc(sizeof(unsigned char) * tokenLength);
 	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "3");
