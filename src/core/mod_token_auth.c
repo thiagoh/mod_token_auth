@@ -8,7 +8,7 @@
 #include "apr_pools.h"
 #include "ap_config.h"
 #include "ap_provider.h"
-/* Include the required headers from httpd */
+
 #include "httpd.h"
 #include "http_core.h"
 #include "http_config.h"
@@ -16,7 +16,7 @@
 #include "http_protocol.h"
 #include "http_request.h"
 
-/* Define prototypes of our functions in this module */
+/* Prototypes of our functions in this module */
 static void register_hooks(apr_pool_t *pool);
 static int mod_handler(request_rec *r);
 
@@ -89,9 +89,7 @@ const char *directive_set_debug_level(cmd_parms *cmd, void *cfg, const char *arg
     return NULL;
 }
 
-/* Handler for the "exampleAction" directive */
-/* Let's pretend this one takes one argument (file or db), and a second (deny or allow), */
-/* and we store it in a bit-wise manner. */
+/* Handler for the "duration" directive */
 const char *directive_set_duration(cmd_parms *cmd, void *cfg, const char *arg1, const char *arg2) {
 
 	config.duration.duration = 1;
