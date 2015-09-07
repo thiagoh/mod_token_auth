@@ -24,6 +24,9 @@ Add the following code to your apache to test the examples
        #TokenAuthEnabled false
        TokenAuthEnabled on
        TokenAuthSecretKey "The fox jumped over the lazy dog"
+       TokenAuthIV "target"
+		  TokenAuthAlgorithm DESede
+		  TokenAuthTokenParam t
        TokenAuthDuration 4 s
   </Location>
 
@@ -32,6 +35,9 @@ Add the following code to your apache to test the examples
  AddHandler token-auth-handler .secret
  TokenAuthEnabled on
  TokenAuthSecretKey "This key is private. Or you'd have some problems..."
+ TokenAuthIV "target"
+ TokenAuthAlgorithm DESede
+ TokenAuthTokenParam t
  TokenAuthDuration 2 h
 
 ```
