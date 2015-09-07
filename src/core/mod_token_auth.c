@@ -72,6 +72,12 @@ const char *directive_set_iv(cmd_parms *cmd, void *cfg, const char *arg) {
 const char *directive_set_algorithm(cmd_parms *cmd, void *cfg, const char *arg) {
 
     config.algorithm = arg;
+
+    if (!strcasecmp(config.algorithm, "aes") && !strcasecmp(config.algorithm, "desede")) {
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, cmd->server, "No such algorithm %s exists", config.algorithm);
+		return DECLINED;
+	}
+
     return NULL;
 }
 
@@ -239,7 +245,6 @@ static int mod_handler_debug(request_rec *r) {
 
 			if (!deciphereddata.error) {
 				deciphereddata.data[deciphereddata.length] = '\0';
-
 				ap_rprintf(r, "DECiphered data: %s <br />", deciphereddata.data);
 			} else {
 				ap_rprintf(r, "Error!! %s", deciphereddata.errorMessage);
@@ -284,6 +289,10 @@ static int mod_handler_execute(request_rec *r) {
 		return DECLINED;
 	}
 
+	if (!strcasecmp(config.algorithm, "aes") && !strcasecmp(config.algorithm, "desede")) {
+		return DECLINED;
+	}
+
 	const unsigned char* key = config.secretKey;
 	const unsigned char* ivDecoded = config.iv;
 	long keylength = strlen((char*) config.secretKey);
@@ -318,7 +327,6 @@ static int mod_handler_execute(request_rec *r) {
 	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "4");
 
 	int dataDecodedLen = cryptoc_base64_decode(token, tokenLength, dataDecoded);
-
 
 	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "5");
 
