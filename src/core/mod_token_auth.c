@@ -316,7 +316,7 @@ static int mod_handler_execute(request_rec *r) {
 	deciphereddata = (cryptoc_data*) malloc(sizeof(cryptoc_data));
 
 	if (!deciphereddata) {
-		if (config.debugLevel >= 3) {
+		if (config.debugLevel >= 2) {
 			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Could not allocate memory for decrypt data");
 		}
 		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
@@ -326,7 +326,7 @@ static int mod_handler_execute(request_rec *r) {
 	dataDecoded = (unsigned char*) malloc(sizeof(unsigned char) * tokenLength);
 
 	if (!dataDecoded) {
-		if (config.debugLevel >= 3) {
+		if (config.debugLevel >= 2) {
 			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Could not allocate memory for decoded data");
 		}
 		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
@@ -336,17 +336,21 @@ static int mod_handler_execute(request_rec *r) {
 	dataDecodedLen = cryptoc_base64_decode(token, tokenLength, dataDecoded);
 
 	if (!dataDecodedLen || !dataDecoded) {
-		if (config.debugLevel >= 3) {
+		if (config.debugLevel >= 2) {
 			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Could not base64 decode data");
 		}
 		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
 		return DECLINED;
 	}
 
+	if (config.debugLevel >= 3) {
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, 0, r->server, "Data decoded successfully");
+	}
+
 	ivDecoded = (unsigned char*) malloc(sizeof(unsigned char) * strlen((const char*)ivEncoded));
 
 	if (!ivDecoded) {
-		if (config.debugLevel >= 3) {
+		if (config.debugLevel >= 2) {
 			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Could not allocate memory for IV");
 		}
 		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
@@ -356,7 +360,7 @@ static int mod_handler_execute(request_rec *r) {
 	ivDecodedLen = cryptoc_base64_decode(ivEncoded, strlen((const char*)ivEncoded), ivDecoded);
 
 	if (!ivDecodedLen || !ivDecoded) {
-		if (config.debugLevel >= 3) {
+		if (config.debugLevel >= 2) {
 			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Could not base64 decode IV");
 		}
 		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
@@ -364,25 +368,25 @@ static int mod_handler_execute(request_rec *r) {
 	}
 
 	if (config.debugLevel >= 3) {
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "6");
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, 0, r->server, "IV decoded successfully");
 	}
 
 	*deciphereddata = cryptoc_decrypt_iv(CRYPTOC_DES_EDE3_CBC, key, keylength, ivDecoded, ivDecodedLen, dataDecoded, dataDecodedLen);
 
-	if (config.debugLevel >= 3) {
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "7");
-	}
-
-	if (deciphereddata->error) {
-		if (config.debugLevel >= 2) {
-			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Deciphering error: %s", deciphereddata->errorMessage);
+	if (!deciphereddata || deciphereddata->error) {
+		if (deciphereddata) {
+			if (config.debugLevel >= 2) {
+				ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Deciphering error: %s", deciphereddata->errorMessage);
+			}
+		} else {
+			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Deciphering error: unknown error");
 		}
 		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
 		return DECLINED;
 	}
 
 	if (config.debugLevel >= 3) {
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "8");
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, 0, r->server, "Data decrypted successfully");
 	}
 
 	unsigned char* finalData = 0;
