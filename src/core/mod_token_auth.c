@@ -310,7 +310,7 @@ static int mod_handler_execute(request_rec *r) {
 	cryptoc_data* deciphereddata = 0;
 
 	if (config.debugLevel >= 3) {
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Starting process");
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Process started");
 	}
 
 	deciphereddata = (cryptoc_data*) malloc(sizeof(cryptoc_data));
@@ -393,8 +393,8 @@ static int mod_handler_execute(request_rec *r) {
 	finalData = (unsigned char*) malloc(sizeof(unsigned char) * deciphereddata->length + 1);
 
 	if (!finalData){
-		if (config.debugLevel >= 3) {
-			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "9");
+		if (config.debugLevel >= 2) {
+			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Could not allocate final data");
 		}
 		return DECLINED;
 	}
@@ -403,10 +403,14 @@ static int mod_handler_execute(request_rec *r) {
 	finalData[deciphereddata->length + 1] = '\0';
 
 	if (config.debugLevel >= 2) {
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Deciphering data: %s", finalData);
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_INFO, 0, r->server, "Final data copied successfully. Decrypted data: %s", finalData);
 	}
 
 	_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
+
+	if (config.debugLevel >= 3) {
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Process finished");
+	}
 
 	return OK;
 }
