@@ -123,13 +123,6 @@ static void register_hooks(apr_pool_t *pool) {
 	ap_hook_handler(mod_handler, NULL, NULL, APR_HOOK_LAST);
 }
 
-static void log(request_rec *r, const char *fmt, ...) {
-	va_list args;
-	va_start(args, fmt);
-	//ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_NOTICE, 0, r->server, fmt, __VA_ARGS__);
-	va_end(args);
-}
-
 void _free_crypto_data(cryptoc_data* deciphereddata, unsigned char* dataDecoded, unsigned char* ivDecoded) {
 
 	free(dataDecoded);
@@ -264,20 +257,6 @@ static int mod_handler_debug(request_rec *r) {
 
 static int mod_handler_execute(request_rec *r) {
 
-	apr_table_t*GET;
-	ap_args_to_table(r, &GET);
-
-	const char* tokenParam = config.tokenParam == 0 ? "token" : config.tokenParam;
-	const char *token = getParam(GET, tokenParam, "");
-	size_t tokenLength = strlen((char*)token);
-
-	if (tokenLength == 0) {
-		if (config.debugLevel >= 2) {
-			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "no token");
-		}
-		return DECLINED;
-	}
-
 	if (!config.secretKey) {
 		if (config.debugLevel >= 1) {
 			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "No such secretKey set");
@@ -306,6 +285,20 @@ static int mod_handler_execute(request_rec *r) {
 		return DECLINED;
 	}
 
+	apr_table_t*GET;
+	ap_args_to_table(r, &GET);
+
+	const char* tokenParam = config.tokenParam == 0 ? "token" : config.tokenParam;
+	const char *token = getParam(GET, tokenParam, "");
+	size_t tokenLength = strlen((char*)token);
+
+	if (tokenLength == 0) {
+		if (config.debugLevel >= 2) {
+			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "No such token passed");
+		}
+		return DECLINED;
+	}
+
 	const unsigned char* key = config.secretKey;
 	const unsigned char* ivDecoded = config.iv;
 	long keylength = strlen((char*) config.secretKey);
@@ -313,44 +306,38 @@ static int mod_handler_execute(request_rec *r) {
 	unsigned char* dataDecoded = 0;
 	cryptoc_data* deciphereddata = 0;
 
-	//unsigned char* ivEncoded = (unsigned char *) "dGFyZ2V0AAA=";
-	//int ivDecodedLen = cryptoc_base64_decode(ivEncoded, strlen((const char*)ivEncoded), ivDecoded);
-
 	if (config.debugLevel >= 3) {
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "0");
+		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Starting process");
 	}
 
 	deciphereddata = (cryptoc_data*) malloc(sizeof(cryptoc_data));
 
-	if (config.debugLevel >= 3) {
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "1");
-	}
-
 	if (!deciphereddata) {
+		if (config.debugLevel >= 3) {
+			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Could not allocate memory for decrypt data");
+		}
 		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
 		return DECLINED;
-	}
-
-	if (config.debugLevel >= 3) {
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "2");
 	}
 
 	dataDecoded = (unsigned char*) malloc(sizeof(unsigned char) * tokenLength);
-	ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "3");
 
 	if (!dataDecoded) {
+		if (config.debugLevel >= 3) {
+			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Could not allocate memory for decoded data");
+		}
 		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
 		return DECLINED;
-	}
-
-	if (config.debugLevel >= 3) {
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "4");
 	}
 
 	int dataDecodedLen = cryptoc_base64_decode(token, tokenLength, dataDecoded);
 
-	if (config.debugLevel >= 3) {
-		ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "5");
+	if (!dataDecodedLen) {
+		if (config.debugLevel >= 3) {
+			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Could not base64 decode data");
+		}
+		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
+		return DECLINED;
 	}
 
 	if (!ivDecoded) {
