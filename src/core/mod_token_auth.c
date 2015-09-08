@@ -300,10 +300,13 @@ static int mod_handler_execute(request_rec *r) {
 	}
 
 	const unsigned char* key = config.secretKey;
-	const unsigned char* ivDecoded = config.iv;
+	const unsigned char* ivEncoded = config.iv;
+	int ivEncodedLen = strlen((char*) config.iv);
 	long keylength = strlen((char*) config.secretKey);
-	int ivDecodedLen = strlen((char*) config.iv);
+	unsigned char* ivDecoded = 0;
+	int ivDecodedLen = 0;
 	unsigned char* dataDecoded = 0;
+	int dataDecodedLen = 0;
 	cryptoc_data* deciphereddata = 0;
 
 	if (config.debugLevel >= 3) {
@@ -330,9 +333,9 @@ static int mod_handler_execute(request_rec *r) {
 		return DECLINED;
 	}
 
-	int dataDecodedLen = cryptoc_base64_decode(token, tokenLength, dataDecoded);
+	dataDecodedLen = cryptoc_base64_decode(token, tokenLength, dataDecoded);
 
-	if (!dataDecodedLen) {
+	if (!dataDecodedLen || !dataDecoded) {
 		if (config.debugLevel >= 3) {
 			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Could not base64 decode data");
 		}
@@ -340,7 +343,22 @@ static int mod_handler_execute(request_rec *r) {
 		return DECLINED;
 	}
 
+	ivDecoded = (unsigned char*) malloc(sizeof(unsigned char) * strlen((const char*)ivEncoded));
+
 	if (!ivDecoded) {
+		if (config.debugLevel >= 3) {
+			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Could not allocate memory for IV");
+		}
+		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
+		return DECLINED;
+	}
+
+	ivDecodedLen = cryptoc_base64_decode(ivEncoded, strlen((const char*)ivEncoded), ivDecoded);
+
+	if (!ivDecodedLen || !ivDecoded) {
+		if (config.debugLevel >= 3) {
+			ap_log_error(APLOG_MARK, APLOG_NOERRNO|APLOG_ERR, 0, r->server, "Could not base64 decode IV");
+		}
 		_free_crypto_data(deciphereddata, dataDecoded, ivDecoded);
 		return DECLINED;
 	}
