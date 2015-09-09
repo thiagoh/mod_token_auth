@@ -20,14 +20,15 @@ Add the following code to your apache to test the examples
 ```
   # Inside <Directory> or <Location> tags
   <Location "/images">
-       SetHandler token-auth-handler
-       #TokenAuthEnabled false
-       TokenAuthEnabled on
-       TokenAuthSecretKey "The fox jumped over the lazy dog"
-       TokenAuthIV "target"
-       TokenAuthAlgorithm DESede
-       TokenAuthTokenParam t
-       TokenAuthDuration 4 s
+      SetHandler token-auth-handler
+      #TokenAuthEnabled false
+      TokenAuthEnabled on
+      TokenAuthSecretKey "The fox jumped over the lazy dog"
+      TokenAuthIV "target"
+      TokenAuthAlgorithm DESede
+      TokenAuthTokenParam t
+      TokenAuthDuration 4 s
+      TokenAuthDebugLevel 1
   </Location>
 
   # Or outsite it
